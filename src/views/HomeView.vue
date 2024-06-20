@@ -37,7 +37,6 @@ export default {
     };
 
     const goToItem = (id) => {
-      store.fetchItemById(id);
       proxy.$router.push(`/item/${id}`);
     };
 

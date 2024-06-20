@@ -19,7 +19,7 @@ export const useItemsStore = defineStore('items', {
           .filter(item => item.name.toLowerCase().includes(searchLowerCase))
           .sort((a, b) => a.name.localeCompare(b.name));
     },
-    showLoadMore(state, getters) {
+    showLoadMore(state) {
       const endIndex = state.currentPage * state.itemsPerPage;
 
       if (state.filteredItems) {
@@ -28,7 +28,7 @@ export const useItemsStore = defineStore('items', {
 
       return false;
     },
-    displayedItems(state, getters) {
+    displayedItems(state) {
       const startIndex = (state.currentPage - 1) * state.itemsPerPage;
       const endIndex = state.currentPage * state.itemsPerPage;
 
@@ -40,11 +40,6 @@ export const useItemsStore = defineStore('items', {
     }
   },
   actions: {
-    async fetchItemsIfNeeded() {
-      if (this.filteredItems.length === 0) {
-        await this.fetchItems();
-      }
-    },
     async fetchItems() {
       const response = await axios.get(BASE_URL);
       this.items = response.data;

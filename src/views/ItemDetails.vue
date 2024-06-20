@@ -5,7 +5,7 @@
       <label :for="item.name">Name:</label>
       <input :id="item.name" v-model="item.name" @input="checkChanges" />
     </div>
-    <div v-for="(value, key) in item.data" :key="key" class="input-group">
+    <div v-for="(key) in item.data" :key="key" class="input-group">
       <label :for="key">{{ key }}:</label>
       <input :id="key" v-model="item.data[key]" @input="checkChanges" />
     </div>
@@ -28,8 +28,8 @@
 
 <script>
 import { useItemsStore } from '../stores/items';
-import {ref, watch, onMounted, getCurrentInstance} from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import {ref, watch, getCurrentInstance} from 'vue';
+import { useRoute } from 'vue-router';
 import { isEqual } from 'lodash';
 
 
@@ -37,7 +37,6 @@ export default {
   setup() {
     const store = useItemsStore();
     const route = useRoute();
-    const router = useRouter();
     const item = ref({});
     const originalItem = ref({});
     const hasChanges = ref(false);
@@ -83,11 +82,8 @@ export default {
       showConfirmation.value = false;
     };
 
-    watch(() => route.params.id, fetchItem);
-    onMounted(() => {
-      store.fetchItemsIfNeeded();
-      fetchItem();
-    });
+    watch(() => route.params.id, fetchItem, { immediate: true });
+
 
 
     return {
