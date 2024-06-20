@@ -28,7 +28,7 @@
 
 <script>
 import { useItemsStore } from '../stores/items';
-import { ref, watch, onMounted } from 'vue';
+import {ref, watch, onMounted, getCurrentInstance} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { isEqual } from 'lodash';
 
@@ -42,6 +42,7 @@ export default {
     const originalItem = ref({});
     const hasChanges = ref(false);
     const showConfirmation = ref(false);
+    const { proxy } = getCurrentInstance()
 
     const fetchItem = async () => {
       const fetchedItem = await store.fetchItemById(route.params.id);
@@ -57,6 +58,7 @@ export default {
       await store.updateItem(item.value);
       originalItem.value = JSON.parse(JSON.stringify(item.value));
       hasChanges.value = false;
+      proxy.$router.push('/')
     };
 
     const discardChanges = () => {
@@ -69,8 +71,12 @@ export default {
     };
 
     const deleteItem = async () => {
-      await store.deleteItem(item.value.id);
-      router.push('/');
+      try {
+        await store.deleteItem(item.value.id);
+        proxy.$router.push('/');
+      } catch (error) {
+        alert(error);
+      }
     };
 
     const closeConfirmation = () => {
@@ -78,7 +84,11 @@ export default {
     };
 
     watch(() => route.params.id, fetchItem);
-    onMounted(fetchItem);
+    onMounted(() => {
+      store.fetchItemsIfNeeded();
+      fetchItem();
+    });
+
 
     return {
       item,

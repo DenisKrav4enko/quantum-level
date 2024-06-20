@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 
+const BASE_URL = 'https://api.restful-api.dev/objects'
+
 export const useItemsStore = defineStore('items', {
   state: () => ({
     items: [],
@@ -38,8 +40,13 @@ export const useItemsStore = defineStore('items', {
     }
   },
   actions: {
+    async fetchItemsIfNeeded() {
+      if (this.filteredItems.length === 0) {
+        await this.fetchItems();
+      }
+    },
     async fetchItems() {
-      const response = await axios.get(`https://api.restful-api.dev/objects`);
+      const response = await axios.get(BASE_URL);
       this.items = response.data;
     },
     loadMore() {
@@ -49,16 +56,44 @@ export const useItemsStore = defineStore('items', {
       this.search = search;
     },
     async fetchItemById(id) {
-      const response = await axios.get(`https://api.restful-api.dev/objects/${id}`);
+      const response = await axios.get(`${BASE_URL}/${id}`);
 
       return response.data;
     },
     async updateItem(item) {
-      await axios.put(`https://api.restful-api.dev/objects/${item.id}`, item);
+      try {
+        const response = await axios.put(`${BASE_URL}/${item.id}`, item);
+
+        return response.status;
+      } catch (error) {
+        if (error.response && error.response.data.error.includes('reserved id')) {
+          const newResponse = await axios.post(`${BASE_URL}`, item);
+          const newItem = newResponse.data;
+
+          const updateResponse = await axios.put(`${BASE_URL}/${newItem.id}`, newItem);
+
+          return updateResponse.status;
+        } else {
+          throw error;
+        }
+      }
     },
     async deleteItem(id) {
-      await axios.delete(`https://api.restful-api.dev/objects/${id}`);
-      this.items = this.items.filter(item => item.id !== id);
+      try {
+        await axios.delete(`${BASE_URL}/${id}`);
+        this.items = this.items.filter(item => item.id !== id);
+      } catch (error) {
+        if (error.response && error.response.data.error.includes('reserved id')) {
+          const response = await axios.get(`${BASE_URL}/${id}`);
+          const newResponse = await axios.post(`${BASE_URL}`, response.data);
+          const newItem = newResponse.data;
+
+          await axios.delete(`${BASE_URL}/${newItem.id}`);
+          this.items = this.items.filter(item => item.id !== id);
+        } else {
+          throw error;
+        }
+      }
     },
   },
 });
